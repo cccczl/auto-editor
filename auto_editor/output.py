@@ -32,9 +32,7 @@ class Ensure:
 
 
 def _ffset(cmd: list[str], option: str, value: str | None) -> list[str]:
-    if value is None or value == "unset":
-        return cmd
-    return cmd + [option] + [value]
+    return cmd if value is None or value == "unset" else cmd + [option] + [value]
 
 
 def video_quality(cmd: list[str], args: Args, ctr: Container) -> list[str]:

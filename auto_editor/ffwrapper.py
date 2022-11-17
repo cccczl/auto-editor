@@ -188,14 +188,10 @@ class FileInfo:
         return 1920, 1080
 
     def get_fps(self) -> Fraction:
-        if len(self.videos) > 0:
-            return self.videos[0].fps
-        return Fraction(30)
+        return self.videos[0].fps if len(self.videos) > 0 else Fraction(30)
 
     def get_samplerate(self) -> int:
-        if len(self.audios) > 0:
-            return self.audios[0].samplerate
-        return 48000
+        return self.audios[0].samplerate if len(self.audios) > 0 else 48000
 
     def __init__(self, path: str, ffmpeg: FFmpeg, log: Log, label: str = ""):
         self.label = label

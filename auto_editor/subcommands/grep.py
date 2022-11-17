@@ -64,8 +64,7 @@ def grep_options(parser: ArgumentParser) -> ArgumentParser:
 # stackoverflow.com/questions/9662346/python-code-to-remove-html-tags-from-a-string
 def cleanhtml(raw_html: str) -> str:
     cleanr = re.compile("<.*?>")
-    cleantext = re.sub(cleanr, "", raw_html)
-    return cleantext
+    return re.sub(cleanr, "", raw_html)
 
 
 def grep_file(
@@ -118,7 +117,7 @@ def grep_file(
                 if args.time:
                     timecode = line.split("-->")[0].strip() + " "
                 else:
-                    timecode = line.strip() + "; "
+                    timecode = f"{line.strip()}; "
                 continue
 
             line = cleanhtml(line)

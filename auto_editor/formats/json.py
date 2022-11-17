@@ -58,8 +58,7 @@ def validate_chunks(chunks: object, log: Log) -> Chunks:
 
         prev_end = chunk[1]
 
-        new_chunks.append((chunk[0], chunk[1], float(chunk[2])))
-
+        new_chunks.append((chunk[0], prev_end, float(chunk[2])))
     return new_chunks
 
 
@@ -94,7 +93,7 @@ def read_json(path: str, ffmpeg: FFmpeg, log: Log) -> Timeline:
     check_attrs(data, log, "version")
     version = Version(data["version"], log)
 
-    if version == (1, 0) or version == (0, 1):
+    if version in [(1, 0), (0, 1)]:
         check_attrs(data, log, "source", "chunks")
         check_file(data["source"], log)
 
@@ -109,7 +108,7 @@ def read_json(path: str, ffmpeg: FFmpeg, log: Log) -> Timeline:
 
         return Timeline({"0": src}, tb, sr, res, "#000", vspace, aspace, chunks)
 
-    if version == (2, 0) or version == (0, 2):
+    if version in [(2, 0), (0, 2)]:
         check_attrs(data, log, "timeline", "source")
         for path in data["source"].values():
             check_file(path, log)
@@ -146,7 +145,7 @@ def make_json_timeline(
 
     version = Version(obj.api, log)
 
-    if version == (1, 0) or version == (0, 1):
+    if version in [(1, 0), (0, 1)]:
         if timeline.chunks is None:
             log.error("Timeline too complex to convert to version 1.0")
 
@@ -159,25 +158,20 @@ def make_json_timeline(
             "source": timeline.sources["0"].abspath,
             "chunks": timeline.chunks,
         }
-    elif version == (2, 0) or version == (0, 2):
-        sources = {}
-        for key, src in timeline.sources.items():
-            sources[key] = src.abspath
-
+    elif version in [(2, 0), (0, 2)]:
+        sources = {key: src.abspath for key, src in timeline.sources.items()}
         v = []
-        for i, vlayer in enumerate(timeline.v):
-            vb = []
-            for vobj in vlayer:
-                vb.append({"name": get_name(vobj)} | vobj.__dict__)
-            if len(vb) > 0:
+        for vlayer in timeline.v:
+            if vb := [
+                {"name": get_name(vobj)} | vobj.__dict__ for vobj in vlayer
+            ]:
                 v.append(vb)
 
         a = []
-        for i, alayer in enumerate(timeline.a):
-            ab = []
-            for aobj in alayer:
-                ab.append({"name": get_name(aobj)} | aobj.__dict__)
-            if len(ab) > 0:
+        for alayer in timeline.a:
+            if ab := [
+                {"name": get_name(aobj)} | aobj.__dict__ for aobj in alayer
+            ]:
                 a.append(ab)
 
         data = {

@@ -37,8 +37,10 @@ def merge_chunks(all_chunks: list[Chunks]) -> Chunks:
     chunks = []
     start = 0
     for _chunks in all_chunks:
-        for chunk in _chunks:
-            chunks.append((chunk[0] + start, chunk[1] + start, chunk[2]))
+        chunks.extend(
+            (chunk[0] + start, chunk[1] + start, chunk[2]) for chunk in _chunks
+        )
+
         if _chunks:
             start += _chunks[-1][1]
 

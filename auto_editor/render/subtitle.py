@@ -35,11 +35,11 @@ class SubtitleParser:
 
         if codec == "ass":
             time_code = re.compile(r"(.*)(\d+:\d+:[\d.]+)(.*)(\d+:\d+:[\d.]+)(.*)")
-        if codec == "webvtt":
-            time_code = re.compile(r"()(\d+:[\d.]+)( --> )(\d+:[\d.]+)(\n.*)")
-        if codec == "mov_text":
+        elif codec == "mov_text":
             time_code = re.compile(r"()(\d+:\d+:[\d,]+)( --> )(\d+:\d+:[\d,]+)(\n.*)")
 
+        elif codec == "webvtt":
+            time_code = re.compile(r"()(\d+:[\d.]+)( --> )(\d+:[\d.]+)(\n.*)")
         i = 0
         for reg in re.finditer(time_code, text):
             i += 1

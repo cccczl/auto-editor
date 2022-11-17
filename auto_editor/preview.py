@@ -23,11 +23,10 @@ def time_frame(title: str, ticks: float, tb: Fraction, per: str | None = None) -
 def all_cuts(tl: Timeline, in_len: int) -> list[int]:
     # Calculate cuts
     tb = tl.timebase
-    oe: list[tuple[int, int]] = []
+    oe: list[tuple[int, int]] = [
+        (clip.offset, clip.offset + clip.dur) for clip in tl.a[0]
+    ]
 
-    # TODO: Make offset_end_pairs work on overlapping clips.
-    for clip in tl.a[0]:
-        oe.append((clip.offset, clip.offset + clip.dur))
 
     cut_lens = []
     i = 0
@@ -38,7 +37,7 @@ def all_cuts(tl: Timeline, in_len: int) -> list[int]:
         cut_lens.append(oe[i + 1][0] - oe[i][1])
         i += 1
 
-    if len(oe) > 0 and oe[-1][1] < round(in_len * tb):
+    if oe and oe[-1][1] < round(in_len * tb):
         cut_lens.append(in_len - oe[-1][1])
     return cut_lens
 
@@ -48,9 +47,10 @@ def preview(ensure: Ensure, tl: Timeline, temp: str, log: Log) -> None:
     tb = tl.timebase
 
     # Calculate input videos length
-    in_len = 0
-    for src in tl.sources.values():
-        in_len += get_media_length(ensure, src, tl.timebase, temp, log)
+    in_len = sum(
+        get_media_length(ensure, src, tl.timebase, temp, log)
+        for src in tl.sources.values()
+    )
 
     out_len = tl.out_len()
 
@@ -65,7 +65,7 @@ def preview(ensure: Ensure, tl: Timeline, temp: str, log: Log) -> None:
     log.debug(clip_lens)
 
     print(f"clips:\n - amount:    {len(clip_lens)}")
-    if len(clip_lens) > 0:
+    if clip_lens:
         time_frame("smallest", min(clip_lens), tb)
         time_frame("largest", max(clip_lens), tb)
     if len(clip_lens) > 1:

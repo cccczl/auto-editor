@@ -13,16 +13,16 @@ av.logging.set_level(av.logging.PANIC)
 
 
 def apply_anchor(x: int, y: int, w: int, h: int, anchor: str) -> tuple[int, int]:
-    if anchor == "ce":
-        x = (x * 2 - w) // 2
-        y = (y * 2 - h) // 2
-    if anchor == "tr":
-        x -= w
     if anchor == "bl":
         y -= h
-    if anchor == "br":
+    elif anchor == "br":
         x -= w
         y -= h
+    elif anchor == "ce":
+        x = (x * 2 - w) // 2
+        y = (y * 2 - h) // 2
+    elif anchor == "tr":
+        x -= w
     # Pillow uses 'tl' by default
     return x, y
 

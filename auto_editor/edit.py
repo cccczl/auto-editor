@@ -158,11 +158,7 @@ def parse_export(export: str, log: Log) -> Exports:
     from auto_editor.objs.util import parse_dataclass
 
     exploded = export.split(":", maxsplit=1)
-    if len(exploded) == 1:
-        name, attrs = exploded[0], ""
-    else:
-        name, attrs = exploded
-
+    name, attrs = (exploded[0], "") if len(exploded) == 1 else exploded
     parsing: dict[str, tuple[Any, list[Attr]]] = {
         "default": (ExDefault, []),
         "premiere": (ExPremiere, []),
@@ -177,7 +173,7 @@ def parse_export(export: str, log: Log) -> Exports:
     if name in parsing:
         return parse_dataclass(attrs, parsing[name], log)
 
-    log.error(f"'{name}': Export must be [{', '.join([s for s in parsing.keys()])}]")
+    log.error(f"'{name}': Export must be [{', '.join(list(parsing.keys()))}]")
 
 
 def edit_media(
@@ -212,7 +208,7 @@ def edit_media(
             src = sources["0"]
         else:
             sources, inputs = make_sources(paths, ffmpeg, log)
-            src = None if not inputs else sources[str(inputs[0])]
+            src = sources[str(inputs[0])] if inputs else None
 
     del paths
 

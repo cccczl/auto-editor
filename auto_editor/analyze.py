@@ -88,10 +88,7 @@ def get_none(
 
 
 def _dict_tag(tag: str, tb: Fraction, obj: Any) -> tuple[str, dict]:
-    if isinstance(obj, dict):
-        obj_dict = obj.copy()
-    else:
-        obj_dict = obj.__dict__.copy()
+    obj_dict = obj.copy() if isinstance(obj, dict) else obj.__dict__.copy()
     if "threshold" in obj_dict:
         del obj_dict["threshold"]
 
@@ -441,11 +438,7 @@ def edit_method(val: str, filesetup: FileSetup) -> NDArray[np.bool_]:
         return stream_data
 
     if method == "motion":
-        if src.videos:
-            _vars: _Vars = {"width": src.videos[0].width}
-        else:
-            _vars = {"width": 1}
-
+        _vars = {"width": src.videos[0].width} if src.videos else {"width": 1}
         mobj = parse_dataclass(attrs, (Motion, motion_builder), log, _vars)
         return to_threshold(
             motion_levels(ensure, src, mobj, tb, bar, strict, temp, log),

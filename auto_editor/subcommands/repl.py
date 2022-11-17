@@ -92,9 +92,10 @@ def main(sys_args: list[str]) -> None:
         log = Log(quiet=True, temp=temp)
         ffmpeg = FFmpeg(args.ffmpeg_location, args.my_ffmpeg, False)
         strict = len(args.input) < 2
-        sources = {}
-        for i, path in enumerate(args.input):
-            sources[str(i)] = FileInfo(path, ffmpeg, log, str(i))
+        sources = {
+            str(i): FileInfo(path, ffmpeg, log, str(i))
+            for i, path in enumerate(args.input)
+        }
 
         src = sources["0"]
         tb = src.get_fps() if args.timebase is None else args.timebase

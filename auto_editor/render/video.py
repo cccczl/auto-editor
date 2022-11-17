@@ -63,14 +63,13 @@ def render_av(
     log: Log,
 ) -> tuple[str, bool]:
 
-    if not timeline.sources:
-        if "0" in timeline.sources:
-            src: FileInfo | None = timeline.sources["0"]
-        else:
-            src = next(iter(timeline.sources.items()))[1]
-    else:
+    if timeline.sources:
         src = None
 
+    elif "0" in timeline.sources:
+        src: FileInfo | None = timeline.sources["0"]
+    else:
+        src = next(iter(timeline.sources.items()))[1]
     font_cache, img_cache = make_caches(timeline.v, timeline.sources, log)
 
     cns: dict[str, Any] = {}
@@ -216,7 +215,7 @@ def render_av(
                         ):
                             seek = frame_index + (seek_cost[obj.src] // 2)
                             seek_frame = frame_index
-                            log.debug(f"Seek: {frame_index} -> {obj.index}")
+                            log.debug(f"Seek: {seek_frame} -> {obj.index}")
                             cns[obj.src].seek(
                                 obj.index * tous[obj.src],
                                 stream=my_stream,
@@ -264,7 +263,7 @@ def render_av(
         bar.end()
         process2.stdin.close()
         process2.wait()
-    except (OSError, BrokenPipeError):
+    except OSError:
         bar.end()
         ffmpeg.run_check_errors(cmd, log, True)
         log.error("FFmpeg Error!")

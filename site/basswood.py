@@ -15,8 +15,7 @@ def error(msg: str) -> NoReturn:
 
 
 def regex_match(regex: str, text: str) -> str | None:
-    match = re.search(regex, text)
-    if match:
+    if match := re.search(regex, text):
         return match.groupdict()["match"]
     return None
 
@@ -138,17 +137,16 @@ class Site:
                 def remove_html_links(n):
                     return n.replace(".html", "")
 
-                if ext == ".html":
-                    if self.production:
-                        if "index" not in item:
-                            new_file = os.path.splitext(new_file)[0]
+                if ext == ".html" and self.production:
+                    if "index" not in item:
+                        new_file = os.path.splitext(new_file)[0]
 
                             # remove bad html files with liquid syntax.
-                            if os.path.exists(new_file + ".html"):
-                                os.remove(new_file + ".html")
+                        if os.path.exists(f"{new_file}.html"):
+                            os.remove(f"{new_file}.html")
 
-                        # remove .html links
-                        contents = list(map(remove_html_links, contents))
+                    # remove .html links
+                    contents = list(map(remove_html_links, contents))
 
                 with open(new_file, "w") as file:
                     file.writelines(contents)

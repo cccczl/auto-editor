@@ -77,7 +77,7 @@ def fcp_xml(output: str, timeline: Timeline) -> None:
     total_dur = chunks[-1][1]
 
     if system() == "Windows":
-        pathurl = "file://localhost/" + PureWindowsPath(src.abspath).as_posix()
+        pathurl = f"file://localhost/{PureWindowsPath(src.abspath).as_posix()}"
     else:
         pathurl = Path(src.abspath).as_uri()
 
@@ -85,7 +85,7 @@ def fcp_xml(output: str, timeline: Timeline) -> None:
     frame_duration = fraction(1, tb)
 
     audio_file = len(src.videos) == 0 and len(src.audios) > 0
-    group_name = "Auto-Editor {} Group".format("Audio" if audio_file else "Video")
+    group_name = f'Auto-Editor {"Audio" if audio_file else "Video"} Group'
     name = src.basename
 
     colorspace = get_colorspace(src)

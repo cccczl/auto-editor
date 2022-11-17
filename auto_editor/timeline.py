@@ -62,17 +62,16 @@ class Timeline:
     def out_len(self) -> float:
         out_len: float = 0
         for vclips in self.v:
-            dur: float = 0
-            for v_obj in vclips:
-                if isinstance(v_obj, TlVideo):
-                    dur += v_obj.dur / v_obj.speed
-                else:
-                    dur += v_obj.dur
+            dur: float = sum(
+                v_obj.dur / v_obj.speed
+                if isinstance(v_obj, TlVideo)
+                else v_obj.dur
+                for v_obj in vclips
+            )
+
             out_len = max(out_len, dur)
         for aclips in self.a:
-            dur = 0
-            for aclip in aclips:
-                dur += aclip.dur / aclip.speed
+            dur = sum(aclip.dur / aclip.speed for aclip in aclips)
             out_len = max(out_len, dur)
         return out_len
 
@@ -89,7 +88,7 @@ def make_timeline(
     log: Log,
 ) -> Timeline:
 
-    inp = None if not inputs else sources[str(inputs[0])]
+    inp = sources[str(inputs[0])] if inputs else None
 
     if inp is None:
         tb, res = Fraction(30), (1920, 1080)

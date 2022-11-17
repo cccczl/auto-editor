@@ -153,10 +153,14 @@ def print_option_help(program_name: str | None, ns_obj: T, option: Options) -> N
 
 
 def get_option(name: str, options: list[Options]) -> Options | None:
-    for option in options:
-        if name in option.names or name in map(to_underscore, option.names):
-            return option
-    return None
+    return next(
+        (
+            option
+            for option in options
+            if name in option.names or name in map(to_underscore, option.names)
+        ),
+        None,
+    )
 
 
 def parse_value(option: Options | Required, val: str | None) -> Any:
@@ -202,7 +206,7 @@ class ArgumentParser:
         sys_args: list[str],
         macros: list[tuple[set[str], list[str]]] | None = None,
     ) -> T:
-        if len(sys_args) == 0 and self.program_name is not None:
+        if not sys_args and self.program_name is not None:
             from auto_editor.help import data
 
             out(data[self.program_name]["_"])
@@ -269,8 +273,9 @@ class ArgumentParser:
                     if arg.replace(",", "") in option_names:
                         Log().error(f"Option '{arg}' has an unnecessary comma.")
 
-                    close_matches = difflib.get_close_matches(arg, option_names)
-                    if close_matches:
+                    if close_matches := difflib.get_close_matches(
+                        arg, option_names
+                    ):
                         Log().error(
                             f"Unknown {label}: {arg}\n\n    Did you mean:\n        "
                             + ", ".join(close_matches)

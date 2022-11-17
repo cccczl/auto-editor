@@ -27,10 +27,7 @@ def safe_mkdir(path: str) -> str:
 
 
 def indent(base: int, *lines: str) -> str:
-    new_lines = ""
-    for line in lines:
-        new_lines += ("\t" * base) + line + "\n"
-    return new_lines
+    return "".join(("\t" * base) + line + "\n" for line in lines)
 
 
 class Validator:
@@ -38,11 +35,12 @@ class Validator:
         self.log = log
 
     def parse(self, ele: Element, schema: dict) -> dict:
-        new: dict = {}
+        new: dict = {
+            key: []
+            for key, val in schema.items()
+            if isinstance(val, dict) and "__arr" in val
+        }
 
-        for key, val in schema.items():
-            if isinstance(val, dict) and "__arr" in val:
-                new[key] = []
 
         is_arr = False
         for child in ele:

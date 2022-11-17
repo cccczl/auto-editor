@@ -45,7 +45,7 @@ def parse_dataclass(
         if val is None:
             return None
 
-        if name in ("start", "dur", "offset"):
+        if name in {"start", "dur", "offset"}:
             assert "tb" in _vars and "end" in _vars
             if isinstance(val, int):
                 return val
@@ -59,11 +59,11 @@ def parse_dataclass(
 
             return seconds_to_ticks(time(val), _vars["tb"])
 
-        if name in ("x", "width"):
+        if name in {"x", "width"}:
             assert "width" in _vars
             return pos((val, _vars["width"]))
 
-        if name in ("y", "height"):
+        if name in {"y", "height"}:
             assert "height" in _vars
             return pos((val, _vars["height"]))
 
@@ -84,7 +84,7 @@ def parse_dataclass(
         else:
             kwargs[key] = attr.default
 
-    if attrs_str == "":
+    if not attrs_str:
         for k, v in kwargs.items():
             if v is None:
                 log.error(f"'{k}' must be specified.")

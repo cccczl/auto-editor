@@ -7,12 +7,10 @@ def pip_version():
     with open("auto_editor/__init__.py") as f:
         version_content = f.read()
 
-    version_match = re.search(
+    if version_match := re.search(
         r"^__version__ = ['\"]([^'\"]*)['\"]", version_content, re.M
-    )
-
-    if version_match:
-        return version_match.group(1)
+    ):
+        return version_match[1]
 
     raise ValueError("Unable to find version string.")
 

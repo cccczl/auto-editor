@@ -32,20 +32,21 @@ def _read_fmt_chunk(
     if format_tag == EXTENSIBLE and size >= 18:
         ext_chunk_size = struct.unpack(f"{en}H", fid.read(2))[0]
         bytes_read += 2
-        if ext_chunk_size >= 22:
-            extensible_chunk_data = fid.read(22)
-            bytes_read += 22
-            raw_guid = extensible_chunk_data[6:22]
-
-            if en == ">":
-                tail = b"\x00\x00\x00\x10\x80\x00\x00\xAA\x00\x38\x9B\x71"
-            else:
-                tail = b"\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71"
-            if raw_guid.endswith(tail):
-                format_tag = struct.unpack(f"{en}I", raw_guid[:4])[0]
-        else:
+        if ext_chunk_size < 22:
             raise ValueError("Binary structure of wave file is not compliant")
 
+        extensible_chunk_data = fid.read(22)
+        bytes_read += 22
+        raw_guid = extensible_chunk_data[6:22]
+
+        tail = (
+            b"\x00\x00\x00\x10\x80\x00\x00\xAA\x00\x38\x9B\x71"
+            if en == ">"
+            else b"\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71"
+        )
+
+        if raw_guid.endswith(tail):
+            format_tag = struct.unpack(f"{en}I", raw_guid[:4])[0]
     if format_tag not in {PCM, IEEE_FLOAT}:
         raise ValueError(
             f"Encountered unknown format tag: {format_tag:#06x}, while reading fmt chunk."
@@ -92,7 +93,7 @@ def _read_data_chunk(
                 f"Unsupported bit depth: the WAV file has {bit_depth}-bit integer data."
             )
     elif format_tag == IEEE_FLOAT:
-        if bit_depth in (32, 64):
+        if bit_depth in {32, 64}:
             dtype = f"{en}f{bytes_per_sample}"
         else:
             raise ValueError(
@@ -228,69 +229,65 @@ def read(filename: str) -> tuple[int, AudioData]:
 
 
 def write(filename: str, sr: int, arr: AudioData) -> None:
-    # Write empty samples to 'filename' with properties of given arr
-    fid = open(filename, "wb")
+    with open(filename, "wb") as fid:
+        # Write RIFF WAV Header
+        fid.write(b"RIFF\x00\x00\x00\x00WAVE")
 
-    # Write RIFF WAV Header
-    fid.write(b"RIFF\x00\x00\x00\x00WAVE")
+        # Write RF64 WAV Header
+        # fid.write(b"RF64\xff\xff\xff\xffWAVEds64")
 
-    # Write RF64 WAV Header
-    # fid.write(b"RF64\xff\xff\xff\xffWAVEds64")
+        # #  - chunk_size
+        # fid.write(b'\x1c\x00\x00\x00')  # Value based on bit-depth + '# of samples'
 
-    # #  - chunk_size
-    # fid.write(b'\x1c\x00\x00\x00')  # Value based on bit-depth + '# of samples'
+        # # - bw_size, Declaring Little Endian
+        # fid.write(b'j@|\x00')
+        # fid.write(b'\x00\x00\x00\x00')
 
-    # # - bw_size, Declaring Little Endian
-    # fid.write(b'j@|\x00')
-    # fid.write(b'\x00\x00\x00\x00')
+        # Write 'fmt' Header
+        dkind = arr.dtype.kind
 
-    # Write 'fmt' Header
-    dkind = arr.dtype.kind
+        header_data = b"fmt "
 
-    header_data = b"fmt "
+        format_tag = IEEE_FLOAT if dkind == "f" else PCM
+        channels = 1 if arr.ndim == 1 else arr.shape[1]
+        bit_depth = arr.dtype.itemsize * 8
+        bit_rate = sr * (bit_depth // 8) * channels
+        block_align = channels * (bit_depth // 8)
 
-    format_tag = IEEE_FLOAT if dkind == "f" else PCM
-    channels = 1 if arr.ndim == 1 else arr.shape[1]
-    bit_depth = arr.dtype.itemsize * 8
-    bit_rate = sr * (bit_depth // 8) * channels
-    block_align = channels * (bit_depth // 8)
+        fmt_chunk_data = struct.pack(
+            "<HHIIHH", format_tag, channels, sr, bit_rate, block_align, bit_depth
+        )
 
-    fmt_chunk_data = struct.pack(
-        "<HHIIHH", format_tag, channels, sr, bit_rate, block_align, bit_depth
-    )
+        if dkind not in ["i", "u"]:
+            # add cbSize field for non-PCM files
+            fmt_chunk_data += b"\x00\x00"
 
-    if not (dkind == "i" or dkind == "u"):
-        # add cbSize field for non-PCM files
-        fmt_chunk_data += b"\x00\x00"
+        header_data += struct.pack("<I", len(fmt_chunk_data))
+        header_data += fmt_chunk_data
 
-    header_data += struct.pack("<I", len(fmt_chunk_data))
-    header_data += fmt_chunk_data
+            # fact chunk (non-PCM files)
+        if dkind not in ["i", "u"]:
+            header_data += b"fact"
+            header_data += struct.pack("<II", 4, arr.shape[0])
 
-    # fact chunk (non-PCM files)
-    if not (dkind == "i" or dkind == "u"):
-        header_data += b"fact"
-        header_data += struct.pack("<II", 4, arr.shape[0])
+        # check data size (needs to be immediately before the data chunk)
+        if ((len(header_data) - 8) + (8 + arr.nbytes)) > 0xFFFFFFFF:
+            raise ValueError("Data exceeds wave file size limit")
 
-    # check data size (needs to be immediately before the data chunk)
-    if ((len(header_data) - 8) + (8 + arr.nbytes)) > 0xFFFFFFFF:
-        raise ValueError("Data exceeds wave file size limit")
+        fid.write(header_data)
 
-    fid.write(header_data)
+        # Write Data Chunk
+        fid.write(b"data")
+        fid.write(struct.pack("<I", arr.nbytes))
+        if arr.dtype.byteorder == ">" or (
+            arr.dtype.byteorder == "=" and sys.byteorder == "big"
+        ):
+            arr = arr.byteswap()
 
-    # Write Data Chunk
-    fid.write(b"data")
-    fid.write(struct.pack("<I", arr.nbytes))
-    if arr.dtype.byteorder == ">" or (
-        arr.dtype.byteorder == "=" and sys.byteorder == "big"
-    ):
-        arr = arr.byteswap()
+        # Write the actual data
+        fid.write(arr.ravel().view("b").data)
 
-    # Write the actual data
-    fid.write(arr.ravel().view("b").data)
-
-    # Write size info
-    size = fid.tell()
-    fid.seek(4)
-    fid.write(struct.pack("<I", size - 8))
-
-    fid.close()
+        # Write size info
+        size = fid.tell()
+        fid.seek(4)
+        fid.write(struct.pack("<I", size - 8))

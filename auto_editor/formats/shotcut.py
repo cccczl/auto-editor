@@ -142,11 +142,7 @@ def shotcut_write_mlt(output: str, timeline: Timeline) -> None:
 
         speed = clip[2]
 
-        if speed == 1:
-            in_len: float = clip[0] - 1
-        else:
-            in_len = max(clip[0] / speed, 0)
-
+        in_len = clip[0] - 1 if speed == 1 else max(clip[0] / speed, 0)
         out_len = max((clip[1] - 2) / speed, 0)
 
         _in = to_timecode(in_len / tb, "standard")

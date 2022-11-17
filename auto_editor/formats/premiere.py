@@ -68,10 +68,7 @@ def read_tb_ntsc(tb: int, ntsc: bool) -> Fraction:
             return Fraction(24000, 1001)
         if tb == 30:
             return Fraction(30000, 1001)
-        if tb == 60:
-            return Fraction(60000, 1001)
-        return tb * Fraction(999, 1000)
-
+        return Fraction(60000, 1001) if tb == 60 else tb * Fraction(999, 1000)
     return Fraction(tb)
 
 
@@ -253,12 +250,8 @@ def premiere_write_xml(ensure: Ensure, output: str, timeline: Timeline) -> None:
     if timeline.chunks is None:
         raise ValueError("Timeline too complex")
 
-    clips = []
     duration = timeline.chunks[-1][1]
-    for chunk in timeline.chunks:
-        if chunk[2] != 99999:
-            clips.append(chunk)
-
+    clips = [chunk for chunk in timeline.chunks if chunk[2] != 99999]
     samplerate = timeline.samplerate
     src = timeline.sources["0"]
 

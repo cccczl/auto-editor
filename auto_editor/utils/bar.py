@@ -18,23 +18,23 @@ class Bar:
         self.chars: tuple[str, ...] = (" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█")
         self.brackets = ("|", "|")
 
-        if bar_type == "classic":
-            self.icon = "⏳"
-            self.chars = ("░", "█")
-            self.brackets = ("[", "]")
         if bar_type == "ascii":
             self.icon = "& "
             self.chars = ("-", "#")
             self.brackets = ("[", "]")
-        if bar_type == "machine":
+        elif bar_type == "classic":
+            self.icon = "⏳"
+            self.chars = ("░", "█")
+            self.brackets = ("[", "]")
+        elif bar_type == "machine":
             self.machine = True
-        if bar_type == "none":
+        elif bar_type == "none":
             self.hide = True
 
         self.part_width = len(self.chars) - 1
 
         self.ampm = True
-        if system() == "Darwin" and bar_type in ("default", "classic"):
+        if system() == "Darwin" and bar_type in {"default", "classic"}:
             try:
                 date_format = get_stdout(
                     ["defaults", "read", "com.apple.menuextra.clock", "DateFormat"]
@@ -111,19 +111,14 @@ class Bar:
         whole_width = floor(progress * width)
         remainder_width = (progress * width) % 1
         part_width = floor(remainder_width * self.part_width)
-        part_char = self.chars[part_width]
-
-        if width - whole_width - 1 < 0:
-            part_char = ""
-
-        line = (
+        part_char = "" if width - whole_width < 1 else self.chars[part_width]
+        return (
             self.brackets[0]
             + self.chars[-1] * whole_width
             + part_char
             + self.chars[0] * (width - whole_width - 1)
             + self.brackets[1]
         )
-        return line
 
     @staticmethod
     def end() -> None:

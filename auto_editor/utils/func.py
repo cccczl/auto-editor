@@ -52,9 +52,7 @@ def setup_tempdir(temp: str | None, log: Log) -> str:
 
 
 def seconds_to_ticks(val: int | str, tb: Fraction) -> int:
-    if isinstance(val, str):
-        return int(float(val) * tb)
-    return val
+    return int(float(val) * tb) if isinstance(val, str) else val
 
 
 def to_timecode(secs: float | Fraction, fmt: str) -> str:
@@ -92,14 +90,12 @@ def remove_small(has_loud: BoolList, lim: int, replace: int, with_: int) -> Bool
                 start_p = j
                 active = True
             # Special case for end.
-            if j == len(has_loud) - 1:
-                if j - start_p < lim:
-                    has_loud[start_p : j + 1] = with_
-        else:
-            if active:
-                if j - start_p < lim:
-                    has_loud[start_p:j] = with_
-                active = False
+            if j == len(has_loud) - 1 and j - start_p < lim:
+                has_loud[start_p : j + 1] = with_
+        elif active:
+            if j - start_p < lim:
+                has_loud[start_p:j] = with_
+            active = False
     return has_loud
 
 
@@ -138,9 +134,7 @@ def set_range(
             value = time(val)
         except TypeError as e:
             log.error(e)
-        if isinstance(value, int):
-            return value
-        return round(float(value) * tb)
+        return value if isinstance(value, int) else round(float(value) * tb)
 
     for _range in range_syntax:
         pair = []
@@ -238,7 +232,7 @@ def open_with_system_default(path: str, log: Log) -> None:
     import sys
     from subprocess import run
 
-    if sys.platform == "win64" or sys.platform == "win32":
+    if sys.platform in ["win64", "win32"]:
         from os import startfile
 
         try:

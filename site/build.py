@@ -22,13 +22,13 @@ def get_link_name(item: str) -> str:
     root, ext = os.path.splitext(item)
 
     _os = "Windows"
-    if ext == ".dmg":
-        _os = "MacOS"
     if ext == ".7z":
         _os = "Arch-Based"
-    if ext == ".deb":
+    elif ext == ".deb":
         _os = "Debian"
 
+    elif ext == ".dmg":
+        _os = "MacOS"
     version = re.search(r"[0-9]\.[0-9]\.[0-9]", root).group()
 
     return f"{version} {_os} Download"

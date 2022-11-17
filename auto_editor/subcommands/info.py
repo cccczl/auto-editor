@@ -192,7 +192,7 @@ def main(sys_args: list[str]) -> None:
         return
 
     def stream_to_text(text: str, label: str, streams: list[dict[str, Any]]) -> str:
-        if len(streams) > 0:
+        if streams:
             text += f" - {label}:\n"
 
         for s, stream in enumerate(streams):

@@ -98,14 +98,12 @@ class Runner:
 
     def check(self, cmd: list[str], match=None) -> None:
         returncode, stdout, stderr = pipe_to_console(self.program + cmd)
-        if returncode > 0:
-            if "Error!" in stderr:
-                if match is not None and match not in stderr:
-                    raise Exception(f'Could\'t find "{match}"')
-            else:
-                raise Exception(f"Program crashed.\n{stdout}\n{stderr}")
-        else:
+        if returncode <= 0:
             raise Exception("Program should not respond with code 0 but did!")
+        if "Error!" not in stderr:
+            raise Exception(f"Program crashed.\n{stdout}\n{stderr}")
+        if match is not None and match not in stderr:
+            raise Exception(f'Could\'t find "{match}"')
 
 
 def run_tests(tests: list[Callable], args: TestArgs) -> None:
@@ -534,20 +532,20 @@ def main(sys_args: list[str] | None = None):
         video = cn.videos[0]
         assert video.fps == 15
         assert video.time_base == Fraction(1, 15)
-        assert float(video.duration) - 17.33333333333333333333333 < 3
+        assert float(video.duration) < 3 + 17.33333333333333333333333
 
         cn = checker.check(run.main(["example.mp4"], ["-r", "20"]))
         video = cn.videos[0]
         assert video.fps == 20
         assert video.time_base == Fraction(1, 20)
-        assert float(video.duration) - 17.33333333333333333333333 < 2
+        assert float(video.duration) < 2 + 17.33333333333333333333333
 
         cn = checker.check(out := run.main(["example.mp4"], ["-r", "60"]))
         video = cn.videos[0]
 
         assert video.fps == 60
         assert video.time_base == Fraction(1, 60)
-        assert float(video.duration) - 17.33333333333333333333333 < 0.3
+        assert float(video.duration) < 17.633333333333333
 
         return out
 

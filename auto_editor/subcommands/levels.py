@@ -104,9 +104,10 @@ def main(sys_args: list[str]) -> None:
     temp = setup_tempdir(None, Log())
     log = Log(temp=temp)
 
-    sources = {}
-    for i, path in enumerate(args.input):
-        sources[str(i)] = FileInfo(path, ffmpeg, log, str(i))
+    sources = {
+        str(i): FileInfo(path, ffmpeg, log, str(i))
+        for i, path in enumerate(args.input)
+    }
 
     assert "0" in sources
     src = sources["0"]
@@ -139,10 +140,7 @@ def main(sys_args: list[str]) -> None:
             )
 
         if method == "motion":
-            if src.videos:
-                _vars: _Vars = {"width": src.videos[0].width}
-            else:
-                _vars = {"width": 1}
+            _vars = {"width": src.videos[0].width} if src.videos else {"width": 1}
             mobj = parse_dataclass(attrs, (Motion, motion_builder[1:]), log, _vars)
             print_floats(motion_levels(ensure, src, mobj, tb, bar, strict, temp, log))
 

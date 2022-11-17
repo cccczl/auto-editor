@@ -61,9 +61,7 @@ class ConsType:
             result += f" {tail.a}"
             tail = tail.d
 
-        if isinstance(tail, Null):
-            return f"{result})"
-        return f"{result} . {tail})"
+        return f"{result})" if isinstance(tail, Null) else f"{result} . {tail})"
 
     def __eq__(self, obj: object) -> bool:
         if isinstance(obj, ConsType):
@@ -85,9 +83,7 @@ class CharType:
         return f"#\\{self.val}" if self.val not in names else f"#\\{names[self.val]}"
 
     def __eq__(self, obj: object) -> bool:
-        if isinstance(obj, CharType):
-            return self.val == obj.val
-        return False
+        return self.val == obj.val if isinstance(obj, CharType) else False
 
     def __radd__(self, obj2: str) -> str:
         return obj2 + self.val
@@ -129,27 +125,18 @@ class Lexer:
     def __init__(self, text: str):
         self.text = text
         self.pos: int = 0
-        if len(text) == 0:
-            self.char: str | None = None
-        else:
-            self.char = self.text[self.pos]
+        self.char = self.text[self.pos] if text else None
 
     def char_is_norm(self) -> bool:
         return self.char is not None and self.char not in '()[]{}"; \t\n\r\x0b\x0c'
 
     def advance(self) -> None:
         self.pos += 1
-        if self.pos > len(self.text) - 1:
-            self.char = None
-        else:
-            self.char = self.text[self.pos]
+        self.char = None if self.pos > len(self.text) - 1 else self.text[self.pos]
 
     def peek(self) -> str | None:
         peek_pos = self.pos + 1
-        if peek_pos > len(self.text) - 1:
-            return None
-        else:
-            return self.text[peek_pos]
+        return None if peek_pos > len(self.text) - 1 else self.text[peek_pos]
 
     def skip_whitespace(self) -> None:
         while self.char is not None and self.char in " \t\n\r\x0b\x0c":
@@ -206,7 +193,7 @@ class Lexer:
 
         if unit == "i":
             try:
-                return Token(NUM, complex(result + "j"))
+                return Token(NUM, complex(f"{result}j"))
             except ValueError:
                 return Token(ID, result + unit)
 
@@ -319,7 +306,7 @@ class Lexer:
                 raise MyError(f"Symbol has illegal character(s): {result}")
 
             for method in METHODS:
-                if result == method or result.startswith(method + ":"):
+                if result == method or result.startswith(f"{method}:"):
                     return Token(ARR, result)
 
             return Token(ID, result)
@@ -524,9 +511,8 @@ def check_args(
     amount = len(values)
     if upper is not None and lower > upper:
         raise ValueError("lower must be less than upper")
-    if lower == upper:
-        if len(values) != lower:
-            raise MyError(f"{o}: Arity mismatch. Expected {lower}, got {amount}")
+    if lower == upper and len(values) != lower:
+        raise MyError(f"{o}: Arity mismatch. Expected {lower}, got {amount}")
 
     if upper is None and amount < lower:
         raise MyError(f"{o}: Arity mismatch. Expected at least {lower}, got {amount}")
@@ -546,9 +532,7 @@ def check_args(
 
 def is_boolarr(arr: object) -> bool:
     """boolarr?"""
-    if isinstance(arr, np.ndarray):
-        return arr.dtype.kind == "b"
-    return False
+    return arr.dtype.kind == "b" if isinstance(arr, np.ndarray) else False
 
 
 def is_bool(val: object) -> bool:
@@ -602,9 +586,7 @@ def is_int(val: object) -> bool:
     """integer?"""
     if isinstance(val, float):
         return val.is_integer()
-    if isinstance(val, Fraction):
-        return int(val) == val
-    return isinstance(val, int)
+    return int(val) == val if isinstance(val, Fraction) else isinstance(val, int)
 
 
 def raise_(msg: str) -> None:
@@ -624,9 +606,7 @@ def is_equal(a: object, b: object) -> bool:
         return np.array_equal(a, b)
     if isinstance(a, float) and not isinstance(b, float):
         return False
-    if not isinstance(a, float) and isinstance(b, float):
-        return False
-    return a == b
+    return False if not isinstance(a, float) and isinstance(b, float) else a == b
 
 
 def equal_num(*values: object) -> bool:
@@ -638,9 +618,7 @@ def mul(*vals: Any) -> Number:
 
 
 def minus(*vals: Number) -> Number:
-    if len(vals) == 1:
-        return -vals[0]
-    return reduce(lambda a, b: a - b, vals)
+    return -vals[0] if len(vals) == 1 else reduce(lambda a, b: a - b, vals)
 
 
 def div(*vals: Any) -> Number:
@@ -649,9 +627,7 @@ def div(*vals: Any) -> Number:
     try:
         if not {float, complex}.intersection({type(val) for val in vals}):
             result = reduce(lambda a, b: Fraction(a, b), vals)
-            if result.denominator == 1:
-                return result.numerator
-            return result
+            return result.numerator if result.denominator == 1 else result
         return reduce(lambda a, b: a / b, vals)
     except ZeroDivisionError:
         raise MyError("division by zero")
@@ -660,28 +636,20 @@ def div(*vals: Any) -> Number:
 def _sqrt(v: Number) -> Number:
     r = cmath.sqrt(v)
     if r.imag == 0:
-        if int(r.real) == r.real:
-            return int(r.real)
-        return r.real
+        return int(r.real) if int(r.real) == r.real else r.real
     return r
 
 
 def ceiling(val: Real) -> Real:
-    if isinstance(val, float):
-        return float(math.ceil(val))
-    return math.ceil(val)
+    return float(math.ceil(val)) if isinstance(val, float) else math.ceil(val)
 
 
 def floor(val: Real) -> Real:
-    if isinstance(val, float):
-        return float(math.floor(val))
-    return math.floor(val)
+    return float(math.floor(val)) if isinstance(val, float) else math.floor(val)
 
 
 def _round(val: Real) -> Real:
-    if isinstance(val, float):
-        return float(round(val))
-    return round(val)
+    return float(round(val)) if isinstance(val, float) else round(val)
 
 
 def _not(val: Any) -> bool | BoolList:
@@ -951,16 +919,12 @@ class Interpreter:
             return edit_method(node.val, self.filesetup)
 
         if isinstance(node, ManyOp):
-            if isinstance(node.op, Var):
-                name: str | None = node.op.value
-            else:
-                name = None
-
+            name = node.op.value if isinstance(node.op, Var) else None
             if name == "if":
                 check_args("if", node.children, (3, 3), None)
                 test_expr = self.visit(node.children[0])
                 if not isinstance(test_expr, bool):
-                    raise MyError(f"if: test-expr arg must be: boolean?")
+                    raise MyError("if: test-expr arg must be: boolean?")
                 if test_expr:
                     return self.visit(node.children[1])
                 return self.visit(node.children[2])
@@ -969,7 +933,7 @@ class Interpreter:
                 check_args("when", node.children, (2, 2), None)
                 test_expr = self.visit(node.children[0])
                 if not isinstance(test_expr, bool):
-                    raise MyError(f"when: test-expr arg must be: boolean?")
+                    raise MyError("when: test-expr arg must be: boolean?")
                 if test_expr:
                     return self.visit(node.children[1])
                 return None
@@ -997,11 +961,7 @@ class Interpreter:
             return oper.proc(*values)
 
         if isinstance(node, Compound):
-            results = []
-            for child in node.children:
-                results.append(self.visit(child))
-            return results
-
+            return [self.visit(child) for child in node.children]
         raise ValueError(f"Unknown node type: {node}")
 
     def interpret(self) -> Any:

@@ -74,17 +74,12 @@ def number(val: str | float) -> float:
 
 def speed(val: str) -> float:
     _s = number(val)
-    if _s <= 0 or _s > 99999:
-        return 99999.0
-    return _s
+    return 99999.0 if _s <= 0 or _s > 99999 else _s
 
 
 def db_number(val: str) -> float | str:
     num, unit = _split_num_str(val)
-    if unit == "dB":
-        return val
-
-    return number(val)
+    return val if unit == "dB" else number(val)
 
 
 def src(val: str) -> int | str:
@@ -121,9 +116,7 @@ def frame_rate(val: str) -> Fraction:
         return Fraction(24000, 1001)
     if val == "pal":
         return Fraction(25)
-    if val == "film":
-        return Fraction(24)
-    return Fraction(val)
+    return Fraction(24) if val == "film" else Fraction(val)
 
 
 def sample_rate(val: str) -> int:
@@ -204,9 +197,7 @@ Stream = Union[int, Literal["all"]]
 
 
 def stream(val: str) -> Stream:
-    if val == "all":
-        return "all"
-    return natural(val)
+    return "all" if val == "all" else natural(val)
 
 
 def color(val: str) -> str:

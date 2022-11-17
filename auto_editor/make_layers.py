@@ -42,14 +42,9 @@ def clipify(chunks: Chunks, src: str, start: Fraction = Fraction(0)) -> list[Cli
     i = 0
     for chunk in chunks:
         if chunk[2] != 99999:
-            if i == 0:
-                dur = chunk[1] - chunk[0]
-                offset = chunk[0]
-            else:
-                dur = chunk[1] - chunk[0]
-                offset = chunk[0] + 1
-
-            if not (len(clips) > 0 and clips[-1].start == round(start)):
+            dur = chunk[1] - chunk[0]
+            offset = chunk[0] if i == 0 else chunk[0] + 1
+            if not (clips and clips[-1].start == round(start)):
                 clips.append(Clip(round(start), dur, offset, chunk[2], src))
             start += Fraction(dur, Fraction(chunk[2]))
             i += 1
@@ -66,7 +61,7 @@ def make_av(
     for inp in inputs:
         max_a = max(max_a, len(sources[str(inp)].audios))
 
-    aclips: ASpace = [[] for a in range(max_a)]
+    aclips: ASpace = [[] for _ in range(max_a)]
 
     for clips, inp in zip(all_clips, inputs):
         src = sources[str(inp)]
@@ -118,7 +113,7 @@ def run_interpreter(
         log.error("Expression in --edit must return a boolarr")
 
     result = results[-1]
-    if not is_boolarr(results[-1]):
+    if not is_boolarr(result):
         log.error("Expression in --edit must return a boolarr")
 
     assert isinstance(result, np.ndarray)
@@ -163,10 +158,10 @@ def make_layers(
         has_loud = run_interpreter(method, filesetup, log)
         has_loud_length = len(has_loud)
 
-        if len(mark_loud) > 0:
+        if mark_loud:
             has_loud = set_range(has_loud, mark_loud, tb, loud_speed, log)
 
-        if len(mark_silent) > 0:
+        if mark_silent:
             has_loud = set_range(has_loud, mark_silent, tb, silent_speed, log)
 
         has_loud = cook(has_loud, min_clip, min_cut)
@@ -192,11 +187,11 @@ def make_layers(
             speed_hash[len(speed_map) - 1] = speed
             return len(speed_map) - 1
 
-        if len(cut_out) > 0:
+        if cut_out:
             index = get_speed(99999)
             has_loud = set_range(has_loud, cut_out, tb, index, log)
 
-        if len(add_in) > 0:
+        if add_in:
             # Set speed index to 'loud_speed'
             has_loud = set_range(has_loud, add_in, tb, 1, log)
 
